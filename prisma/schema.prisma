@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @db.Timestamptz
+  type      TransactionType
+  amount    Float    @db.DoublePrecision
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+  invalidTransaction InvalidTransaction?
+
+  // Critical indexes for performance
+  @@index([timestamp])
+  @@index([timestamp, type])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model DailySummary {
+  id           Int      @id @default(autoincrement())
+  date         DateTime @unique @db.Date
+  balance      Float    @db.DoublePrecision
+  percentChange Float   @db.DoublePrecision
+  transactionCount Int  @default(0)
+  inAmount     Float    @default(0) @db.DoublePrecision
+  outAmount    Float    @default(0) @db.DoublePrecision
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @updatedAt @db.Timestamptz
+
+  @@index([date])
+}
+
+enum TransactionType {
+  IN
+  OUT
+}
+
+model InvalidTransaction {
+  id             Int         @id @default(autoincrement())
+  transaction    Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transactionId  Int         @unique
+  reason         String
+  createdAt      DateTime    @default(now()) @db.Timestamptz
+
+  @@index([transactionId])
+}
