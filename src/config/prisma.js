@@ -1,6 +1,23 @@
+import "dotenv/config"; // ✅ Ensure .env is loaded
 import { PrismaClient } from "../../generated/prisma/index.js";
 
-// Configure Prisma with connection pooling
+// Connection pool configuration
+const connectionPool = {
+  max: 20,
+  min: 5,
+  acquire: 30000,
+  idle: 10000,
+};
+
+// Update DATABASE_URL before using it
+if (process.env.DATABASE_URL) {
+  const url = new URL(process.env.DATABASE_URL);
+  url.searchParams.set("connection_limit", connectionPool.max.toString());
+  url.searchParams.set("pool_timeout", "30");
+  process.env.DATABASE_URL = url.toString();
+}
+
+// Now it's safe to use the updated DATABASE_URL
 const prisma = new PrismaClient({
   datasources: {
     db: {
@@ -10,23 +27,6 @@ const prisma = new PrismaClient({
   log: process.env.NODE_ENV === "development" ? ["query", "error"] : ["error"],
   errorFormat: "minimal",
 });
-
-// Connection pool configuration
-const connectionPool = {
-  max: 20, // Maximum number of connections
-  min: 5, // Minimum number of connections
-  acquire: 30000, // Maximum time to get connection (30s)
-  idle: 10000, // Maximum time connection can be idle (10s)
-};
-
-// Configure connection pool for PostgreSQL
-if (process.env.DATABASE_URL) {
-  const url = new URL(process.env.DATABASE_URL);
-  url.searchParams.set("connection_limit", connectionPool.max.toString());
-  url.searchParams.set("pool_timeout", "30");
-
-  process.env.DATABASE_URL = url.toString();
-}
 
 // Graceful shutdown
 process.on("SIGINT", async () => {
