@@ -1,22 +1,7 @@
 import prisma from "../config/prisma.js";
 import { isFuture } from "date-fns";
 import { recalculateFromTimestamp } from "../utils/utility.js";
-import Redis from "redis";
-
-// const prisma = new PrismaClient();
-
-// Initialize Redis for caching
-const redis = Redis.createClient({
-  host: process.env.REDIS_HOST || "localhost",
-  port: process.env.REDIS_PORT || 6379,
-});
-
-redis.on("error", (err) => {
-  console.error("Redis Client Error:", err);
-});
-
-// Connect to Redis
-redis.connect();
+import redis from "../config/redis.js";
 
 // OPTIMIZED: Get balance at specific timestamp with caching
 const getBalanceAtTimestamp = async (timestamp) => {
